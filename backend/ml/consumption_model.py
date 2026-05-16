@@ -1,48 +1,44 @@
-from prophet import Prophet
-import pandas as pd
-from datetime import datetime, timedelta
-from sqlalchemy import select
-from backend.database.models import OrderItem, Order, ConsumptionModel
-from backend.database.connection import async_session
 import logging
+from datetime import datetime, timedelta
+import pandas as pd
+from prophet import Prophet
+from sqlalchemy import select, func
+from sqlalchemy.ext.asyncio import AsyncSession
+from backend.database.models import Order, OrderItem, ConsumptionModel
+from backend.config import settings
 
 logger = logging.getLogger(__name__)
 
 class ConsumptionModeler:
-    
-    MIN_DATA_POINTS = 3     # Need at least 3 purchases to build a model
-    MIN_CONFIDENCE = 0.30   # Only save models with ≥30% confidence
-    
-    async def build_model_for_item(self, household_id: str, item_id: str, item_name: str) -> dict | None:
-        """
-        Builds Prophet time-series model for a single item.
-        Returns model data or None if insufficient data.
-        """
-        async with async_session() as db:
-            # Fetch purchase history
-            result = await db.execute(
-                select(OrderItem.standard_quantity, Order.placed_at)
-                .join(Order, Order.id == OrderItem.order_id)
-                .where(Order.household_id == household_id)
-                .where(OrderItem.item_id == item_id)
-                .order_by(Order.placed_at.asc())
-            )
-            purchases = result.all()
-        
+    MIN_DATA_POINTS = 3
+
+    async def build_model_for_item(self, household_id: str, item_id: str, item_name: str, db: AsyncSession) -> dict | None:
+        # Fetch purchase history for this item
+        stmt = (
+            select(OrderItem.standard_quantity, Order.placed_at)
+            .join(Order, Order.id == OrderItem.order_id)
+            .where(Order.household_id == household_id)
+            .where(OrderItem.item_id == item_id)
+            .order_by(Order.placed_at.asc())
+        )
+        result = await db.execute(stmt)
+        purchases = result.mappings().all()
+
         if len(purchases) < self.MIN_DATA_POINTS:
-            logger.info(f"Insufficient data for {item_name}: only {len(purchases)} purchases")
             return None
-        
-        # Build Prophet dataframe
+
+        # Prepare DataFrame for Prophet
+        # Prophet expects columns 'ds' (datestamp) and 'y' (value)
         df = pd.DataFrame({
-            "ds": [p[1] for p in purchases],
-            "y": [p[0] for p in purchases]
+            "ds": pd.to_datetime([p["placed_at"] for p in purchases]).tz_localize(None),
+            "y":  [p["standard_quantity"] for p in purchases]
         })
-        # Remove timezone for Prophet
-        df["ds"] = pd.to_datetime(df["ds"]).dt.tz_localize(None)
-        
+
         try:
-            # Fit Prophet model
+            import logging as log
+            log.getLogger('prophet').setLevel(log.WARNING)
+            log.getLogger('cmdstanpy').setLevel(log.WARNING)
+            
             model = Prophet(
                 seasonality_mode='multiplicative',
                 yearly_seasonality=False,
@@ -50,92 +46,94 @@ class ConsumptionModeler:
                 daily_seasonality=False,
                 interval_width=0.80
             )
-            
-            # Suppress Prophet's logging
-            import logging as log
-            log.getLogger('prophet').setLevel(log.WARNING)
-            log.getLogger('cmdstanpy').setLevel(log.WARNING)
-            
             model.fit(df)
-            
-            # Predict future to get consumption rate
-            future = model.make_future_dataframe(periods=30)
-            forecast = model.predict(future)
-            
         except Exception as e:
             logger.error(f"Prophet failed for {item_name}: {e}")
             return None
-        
-        # Calculate derived metrics
-        total_quantity = df["y"].sum()
+
+        total_qty = df["y"].sum()
         days_elapsed = max((df["ds"].max() - df["ds"].min()).days, 1)
-        avg_daily = total_quantity / days_elapsed
-        
+        avg_daily = float(total_qty / days_elapsed)
+
+        # Calculate average cycle days
         time_diffs = df["ds"].diff().dt.days.dropna()
-        cycle_days = float(time_diffs.mean())
+        cycle_days = float(time_diffs.mean()) if not time_diffs.empty else 0.0
+
+        last = purchases[-1]
+        last_date = last["placed_at"]
+        last_qty  = float(last["standard_quantity"])
         
-        last_purchase_date = purchases[-1][1]
-        last_purchase_qty = purchases[-1][0]
-        
-        # Estimated depletion date
+        # Calculate estimated depletion date
         if avg_daily > 0:
-            days_remaining = last_purchase_qty / avg_daily
-            depletion_date = last_purchase_date + timedelta(days=days_remaining)
+            depletion = last_date + timedelta(days=last_qty / avg_daily)
         else:
-            depletion_date = None
-        
-        # Confidence score (simplified: based on purchase consistency)
-        confidence = min(1.0, len(purchases) / 10.0)
-        
+            depletion = None
+
+        # Confidence Score Calculation
+        cycle_std = float(time_diffs.std()) if len(time_diffs) > 1 else 30.0
+        regularity = max(0.0, 1.0 - (cycle_std / 14.0))
+        data_score = min(1.0, len(purchases) / 20.0)
+        confidence = (regularity * 0.6) + (data_score * 0.4)
+
+        if confidence < settings.MIN_CONFIDENCE:
+            return None
+
         return {
-            "avg_daily_consumption": avg_daily,
-            "consumption_cycle_days": cycle_days,
-            "last_purchase_date": last_purchase_date,
-            "last_purchase_quantity": last_purchase_qty,
-            "estimated_depletion_date": depletion_date,
-            "confidence_score": confidence,
-            "data_points": len(purchases)
+            "household_id": household_id, 
+            "item_id": item_id, 
+            "item_name": item_name,
+            "avg_daily_consumption": round(avg_daily, 4),
+            "consumption_cycle_days": round(cycle_days, 1),
+            "last_purchase_date": last_date, 
+            "last_purchase_quantity": last_qty,
+            "estimated_depletion_date": depletion,
+            "confidence_score": round(confidence, 3),
+            "data_points": len(purchases), 
+            "updated_at": datetime.now()
         }
 
-    async def update_all_models(self, household_id: str):
-        """
-        Build/update models for all recurring items in a household.
-        """
-        async with async_session() as db:
-            # Find all items purchased more than MIN_DATA_POINTS times
-            result = await db.execute(
-                select(OrderItem.item_id, OrderItem.item_name)
-                .join(Order, Order.id == OrderItem.order_id)
-                .where(Order.household_id == household_id)
-                .group_by(OrderItem.item_id, OrderItem.item_name)
-                .having(pd.io.sql.func.count(OrderItem.id) >= self.MIN_DATA_POINTS)
-            )
-            items = result.all()
-            
-            for item_id, item_name in items:
-                model_data = await self.build_model_for_item(household_id, item_id, item_name)
-                if not model_data:
-                    continue
-                
-                # Update or insert into consumption_models
-                stmt = select(ConsumptionModel).where(
-                    ConsumptionModel.household_id == household_id,
-                    ConsumptionModel.item_id == item_id
+    async def rebuild_all_models(self, household_id: str, db: AsyncSession) -> dict:
+        # Find distinct items purchased at least MIN_DATA_POINTS times
+        stmt = (
+            select(OrderItem.item_id, OrderItem.item_name, func.count().label('cnt'))
+            .join(Order, Order.id == OrderItem.order_id)
+            .where(Order.household_id == household_id)
+            .group_by(OrderItem.item_id, OrderItem.item_name)
+            .having(func.count() >= self.MIN_DATA_POINTS)
+            .order_by(func.count().desc())
+        )
+        result = await db.execute(stmt)
+        items = result.mappings().all()
+
+        results = {"built": 0, "skipped": 0, "errors": 0}
+        
+        for item in items:
+            try:
+                data = await self.build_model_for_item(
+                    household_id, item["item_id"], item["item_name"], db
                 )
-                existing_res = await db.execute(stmt)
-                existing = existing_res.scalar_one_or_none()
-                
-                if existing:
-                    for key, value in model_data.items():
-                        setattr(existing, key, value)
-                    existing.updated_at = datetime.utcnow()
-                else:
-                    new_model = ConsumptionModel(
-                        household_id=household_id,
-                        item_id=item_id,
-                        item_name=item_name,
-                        **model_data
+                if data:
+                    # Upsert into consumption_models table
+                    stmt = select(ConsumptionModel).where(
+                        ConsumptionModel.household_id == household_id,
+                        ConsumptionModel.item_id == item["item_id"]
                     )
-                    db.add(new_model)
-            
-            await db.commit()
+                    existing_result = await db.execute(stmt)
+                    existing_model = existing_result.scalar_one_or_none()
+                    
+                    if existing_model:
+                        for key, value in data.items():
+                            setattr(existing_model, key, value)
+                    else:
+                        new_model = ConsumptionModel(**data)
+                        db.add(new_model)
+                        
+                    results["built"] += 1
+                else:
+                    results["skipped"] += 1
+            except Exception as e:
+                logger.error(f"Error building model for {item['item_name']}: {e}")
+                results["errors"] += 1
+                
+        await db.commit()
+        return results

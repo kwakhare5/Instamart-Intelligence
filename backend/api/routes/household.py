@@ -3,16 +3,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from backend.database.connection import get_db
 from backend.database.models import Household, Order, OrderItem
+from backend.config import settings
 import httpx
-import os
 from datetime import datetime
-from dotenv import load_dotenv
 
-load_dotenv()
-
-router = APIRouter(prefix="/api/household", tags=["household"])
-
-MCP_BASE_URL = os.getenv("MCP_BASE_URL", "http://localhost:3001")
+router = APIRouter(prefix='/api/household', tags=['household'])
 
 async def get_or_create_household(user_id: str, db: AsyncSession):
     result = await db.execute(select(Household).where(Household.user_id == user_id))
@@ -33,7 +28,7 @@ async def sync_orders(household_id: str, user_id: str, db: AsyncSession):
     async with httpx.AsyncClient() as client:
         try:
             response = await client.get(
-                f"{MCP_BASE_URL}/get_instamart_orders",
+                f'{settings.MCP_BASE_URL}/get_instamart_orders',
                 params={"user_id": user_id, "limit": 200}
             )
             response.raise_for_status()
@@ -82,5 +77,13 @@ async def sync_orders(household_id: str, user_id: str, db: AsyncSession):
 @router.post("/{user_id}/sync")
 async def sync_household_orders(user_id: str, db: AsyncSession = Depends(get_db)):
     household = await get_or_create_household(user_id, db)
-    synced = await sync_orders(household.id, user_id, db)
+    synced = await sync_orders(str(household.id), user_id, db)
     return {"message": f"Synced {synced} new orders", "household_id": str(household.id)}
+
+@router.post("/{user_id}/rebuild-models")
+async def rebuild_household_models(user_id: str, db: AsyncSession = Depends(get_db)):
+    from backend.ml.consumption_model import ConsumptionModeler
+    household = await get_or_create_household(user_id, db)
+    modeler = ConsumptionModeler()
+    results = await modeler.rebuild_all_models(str(household.id), db)
+    return results
