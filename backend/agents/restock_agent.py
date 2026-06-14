@@ -33,6 +33,7 @@ from typing_extensions import TypedDict
 import httpx
 
 from backend.config import settings
+from backend.mcp.client import mcp_client
 
 logger = logging.getLogger(__name__)
 
@@ -215,39 +216,31 @@ async def build_cart(state: RestockState) -> dict:
     cart_items = []
 
     try:
-        async with httpx.AsyncClient(timeout=httpx.Timeout(10.0, connect=5.0)) as client:
-            # Search MCP for each confirmed item
-            for item in state["confirmed_items"]:
-                try:
-                    r = await client.post(
-                        f"{settings.MCP_BASE_URL}/search_instamart_items",
-                        json={"query": item["item_name"]},
-                    )
-                    results = r.json().get("items", [])
-                    if results:
-                        match = results[0]
-                        cart_items.append({
-                            "item_id": match["id"],
-                            "item_name": match["name"],
-                            "quantity": 1,
-                            "price": match["price"],
-                        })
-                except Exception as e:
-                    logger.warning(f"MCP search failed for {item['item_name']}: {e}")
+        # Search MCP for each confirmed item
+        for item in state["confirmed_items"]:
+            try:
+                r = await mcp_client.search_instamart_items(item["item_name"])
+                results = r.get("items", [])
+                if results:
+                    match = results[0]
+                    cart_items.append({
+                        "item_id": match["id"],
+                        "item_name": match["name"],
+                        "quantity": 1,
+                        "price": match["price"],
+                    })
+            except Exception as e:
+                logger.warning(f"MCP search failed for {item['item_name']}: {e}")
 
-            if not cart_items:
-                return {
-                    "response_message": "Couldn't find those items right now. Please try ordering directly on Instamart.",
-                    "stage": "done",
-                    "error": "no_items_found",
-                }
+        if not cart_items:
+            return {
+                "response_message": "Couldn't find those items right now. Please try ordering directly on Instamart.",
+                "stage": "done",
+                "error": "no_items_found",
+            }
 
-            # Build the cart via MCP
-            cart_resp = await client.post(
-                f"{settings.MCP_BASE_URL}/update_instamart_cart",
-                json={"items": cart_items},
-            )
-            cart_data = cart_resp.json()
+        # Build the cart via MCP
+        cart_data = await mcp_client.update_instamart_cart(cart_items)
 
     except Exception as e:
         logger.error(f"Cart build failed: {e}")
@@ -286,12 +279,7 @@ async def place_order(state: RestockState) -> dict:
     On success, returns order ID and ETA for the WhatsApp confirmation.
     """
     try:
-        async with httpx.AsyncClient(timeout=httpx.Timeout(10.0, connect=5.0)) as client:
-            r = await client.post(
-                f"{settings.MCP_BASE_URL}/place_instamart_order",
-                json={"cart_id": state["cart_id"]},
-            )
-            data = r.json()
+        data = await mcp_client.place_instamart_order(state["cart_id"])
 
         if data.get("success"):
             order_id = data["order_id"]
