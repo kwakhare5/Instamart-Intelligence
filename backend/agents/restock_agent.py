@@ -193,6 +193,22 @@ async def parse_user_reply(state: RestockState) -> dict:
 
     except Exception as e:
         logger.error(f"Claude parse error: {e}")
+        # Fallback keyword matching parser in case of Claude API limits or invalid keys
+        wanted = []
+        user_msg_lower = (state.get("user_message") or "").lower()
+        for i in state["depleting_items"]:
+            # Clean and split item name into keywords (e.g. Tomatoes, Amul, Eggs)
+            keywords = [w.strip("(),.-").lower() for w in i["item_name"].split() if len(w.strip("(),.-")) > 2]
+            if any(kw in user_msg_lower for kw in keywords):
+                wanted.append(i)
+        
+        if wanted:
+            logger.info(f"Fallback keyword parser matched items: {[item['item_name'] for item in wanted]}")
+            return {
+                "confirmed_items": wanted,
+                "stage": "building_cart",
+            }
+        
         return {
             "response_message": "Sorry, I didn't catch that. Reply YES to reorder all, or NO to skip.",
             "stage": "awaiting_reply",
@@ -313,6 +329,13 @@ async def place_order(state: RestockState) -> dict:
 # ---------------------------------------------------------------------------
 # Graph Assembly
 # ---------------------------------------------------------------------------
+def _route_entry(state: RestockState) -> str:
+    """Determine graph entry point based on the stage passed in the input state."""
+    if state.get("stage") == "parse_reply":
+        return "parse_reply"
+    return "generate_alert"
+
+
 def _should_place_order(state: RestockState) -> str:
     """Conditional edge: only proceed to place_order if a cart was built."""
     if state.get("cart_id"):
@@ -324,14 +347,7 @@ def build_restock_graph() -> StateGraph:
     """
     Assemble the 4-node restock graph.
 
-    Entry: generate_alert → END (message is sent, we wait for async webhook)
-    Resume: parse_reply → build_cart → place_order → END
-
-    Why two separate entry flows?
-      The initial alert and the user's reply arrive via different triggers:
-      - Alert: fired by the daily scheduler (enters at generate_alert)
-      - Reply: arrives via Twilio webhook (enters at parse_reply)
-      LangGraph handles this by letting us invoke with a specific entry node.
+    Entry: routes dynamically to generate_alert or parse_reply.
     """
     graph = StateGraph(RestockState)
 
@@ -341,8 +357,14 @@ def build_restock_graph() -> StateGraph:
     graph.add_node("build_cart", build_cart)
     graph.add_node("place_order", place_order)
 
-    # Edges
-    graph.set_entry_point("generate_alert")
+    # Conditional entry point to route the start node based on state['stage']
+    graph.set_conditional_entry_point(
+        _route_entry,
+        {
+            "generate_alert": "generate_alert",
+            "parse_reply": "parse_reply"
+        }
+    )
     graph.add_edge("generate_alert", END)      # alert sent; await async reply
 
     # When invoked from webhook (entry="parse_reply"):
