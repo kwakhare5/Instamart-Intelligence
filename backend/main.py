@@ -2,6 +2,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from backend.api.routes import household, predictions, restock, recipes
+from backend.notifications import whatsapp
 from backend.database.connection import init_db
 from backend.notifications.scheduler import start_scheduler, stop_scheduler
 import uvicorn
@@ -14,12 +15,22 @@ async def lifespan(app: FastAPI):
 
     Startup sequence:
       1. init_db   — ensure all tables exist (idempotent via create_all)
-      2. start_scheduler — register APScheduler cron jobs and start the loop
+      2. get_checkpointer — ensure checkpoints table exists
+      3. start_scheduler — register APScheduler cron jobs and start the loop
 
     Shutdown sequence:
       1. stop_scheduler — graceful shutdown (no in-flight jobs interrupted)
     """
     await init_db()
+    # Auto-initialize checkpoints tables
+    try:
+        from backend.database.connection import get_checkpointer
+        async with await get_checkpointer() as cp:
+            await cp.setup()
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).warning(f"Could not connect DB to run checkpointer setup (DB likely offline): {e}")
+
     start_scheduler()
     yield
     stop_scheduler()
@@ -43,6 +54,8 @@ app.include_router(household.router)
 app.include_router(predictions.router)
 app.include_router(restock.router)
 app.include_router(recipes.router)
+app.include_router(whatsapp.router)
+
 
 
 @app.get("/health")
