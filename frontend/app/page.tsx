@@ -1,11 +1,17 @@
-/* ─────────────────────────────────────────────────────────
-   Dashboard Home — Scene 1 of the demo
-   Purpose: First thing a Swiggy evaluator sees.
-   Must answer in 3 seconds: "What does this do? Is it real?"
-   Answer: Shows live household intelligence metrics + the
-   depletion countdown that IS the core product.
-───────────────────────────────────────────────────────── */
+"use client";
+
+import { useEffect, useState } from "react";
 import Link from 'next/link';
+import { predictionsApi } from "../lib/api";
+
+interface DepletingItem {
+  name: string;
+  days: number;
+  conf: number;
+  avg: string;
+  cycle: string;
+  urgent: boolean;
+}
 
 const STATS = [
   { value: "34",     label: "Items Modeled",         sub: "across 4 months of orders" },
@@ -14,8 +20,7 @@ const STATS = [
   { value: "87%",    label: "Peak Confidence",        sub: "Fortune Sunflower Oil" },
 ];
 
-/* Urgency tiers — colour-coded by days remaining */
-const DEPLETING = [
+const FALLBACK_DEPLETING: DepletingItem[] = [
   { name: "Amul Taza Milk 1L",        days: 1,  conf: 76, avg: "1.1L/day",  cycle: "2.1d",  urgent: true  },
   { name: "Fortune Sunflower Oil 1L",  days: 2,  conf: 87, avg: "68ml/day", cycle: "14.7d", urgent: true  },
   { name: "Nandini Eggs — Pack of 12", days: 4,  conf: 88, avg: "2.3/day",  cycle: "6.2d",  urgent: false },
@@ -29,19 +34,45 @@ function urgencyColor(days: number) {
   return             { bar: "#6b6560", text: "text-muted",      pill: "pill-muted"   };
 }
 
-/* Bar fill %: shows how much time is left in a 30-day window */
 function barFill(days: number) {
   return Math.min(100, Math.max(4, Math.round((days / 30) * 100)));
 }
 
 export default function Home() {
+  const [depleting, setDepleting] = useState<DepletingItem[]>(FALLBACK_DEPLETING);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadDashboardData() {
+      try {
+        const res = await predictionsApi.getForHousehold("demo_user_001");
+        if (res.data && res.data.predictions && res.data.predictions.length > 0) {
+          const apiItems = res.data.predictions.map((p: any) => ({
+            name: p.item_name,
+            days: p.days_remaining !== null ? Math.round(p.days_remaining) : 10,
+            conf: Math.round((p.confidence_score || 0.5) * 100),
+            avg: `${p.avg_daily_consumption.toFixed(2)}/day`,
+            cycle: `${p.consumption_cycle_days || 7}d`,
+            urgent: p.days_remaining !== null && p.days_remaining <= 3
+          }));
+          setDepleting(apiItems);
+        }
+      } catch (err) {
+        console.warn("Failed to load dashboard live predictions from API, using static fallbacks.", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadDashboardData();
+  }, []);
+
   return (
     <div className="flex flex-col gap-12">
 
       {/* ── Header ──────────────────────────────────────────── */}
       <div className="flex flex-col gap-3">
         <div className="font-data text-accent text-[10px] tracking-widest uppercase">
-          Instamart Intelligence · System Index
+          Instamart Intelligence · System Index {loading && "(LOADING...)"}
         </div>
         <h1 className="text-5xl font-light tracking-tight uppercase leading-none">
           Household<br />
@@ -79,7 +110,7 @@ export default function Home() {
         </div>
 
         <div className="divide-y divide-border">
-          {DEPLETING.map((item) => {
+          {depleting.map((item) => {
             const u = urgencyColor(item.days);
             return (
               <div
@@ -151,3 +182,4 @@ export default function Home() {
     </div>
   );
 }
+

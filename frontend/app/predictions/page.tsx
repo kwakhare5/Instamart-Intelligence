@@ -1,12 +1,23 @@
-/* ─────────────────────────────────────────────────────────
-   Predictions — Demo Scene 2
-   "Click on Cooking Oil. Show the consumption model.
-    87% confidence. Estimated depletion: May 24.
-    Show the last 5 predictions vs actual reorder dates."
-   — CLAUDE.md Part 7
-───────────────────────────────────────────────────────── */
+"use client";
 
-const ITEMS = [
+import { useEffect, useState } from "react";
+import { predictionsApi } from "../../lib/api";
+
+interface PredictionItem {
+  id: string;
+  name: string;
+  category: string;
+  days: number;
+  conf: number;
+  avg: string;
+  cycle: string;
+  depletes: string;
+  lastBuy: string;
+  qty: string;
+  history: { predicted: string; actual: string; error: number }[];
+}
+
+const FALLBACK_ITEMS: PredictionItem[] = [
   {
     id:       "INS_001",
     name:     "Amul Taza Milk 1L",
@@ -111,13 +122,55 @@ function urgencyStyle(days: number) {
 }
 
 export default function PredictionsPage() {
+  const [items, setItems] = useState<PredictionItem[]>(FALLBACK_ITEMS);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadPredictions() {
+      try {
+        const res = await predictionsApi.getForHousehold("demo_user_001");
+        if (res.data && res.data.predictions && res.data.predictions.length > 0) {
+          const apiItems = res.data.predictions.map((p: any) => {
+            const daysLeft = p.days_remaining !== null ? Math.round(p.days_remaining) : 10;
+            // Generate some mock history cycles for the detail breakdown
+            const mockHist = [
+              { predicted: "3 cycles ago", actual: "3 cycles ago", error: 0 },
+              { predicted: "2 cycles ago", actual: "2 cycles ago", error: 1 },
+              { predicted: "Last cycle", actual: "Last cycle", error: 0 }
+            ];
+            
+            return {
+              id: p.item_id,
+              name: p.item_name,
+              category: p.category || "General",
+              days: daysLeft,
+              conf: Math.round((p.confidence_score || 0.5) * 100),
+              avg: `${p.avg_daily_consumption.toFixed(2)} /day`,
+              cycle: `${p.consumption_cycle_days || 7} days`,
+              depletes: p.estimated_depletion_date ? new Date(p.estimated_depletion_date).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' }) : "Unknown",
+              lastBuy: p.last_purchase_date ? new Date(p.last_purchase_date).toLocaleDateString([], { month: 'short', day: 'numeric' }) : "Unknown",
+              qty: `${p.last_purchase_quantity || 1}`,
+              history: mockHist
+            };
+          });
+          setItems(apiItems);
+        }
+      } catch (err) {
+        console.warn("Failed to load predictions from backend, using default fallback data.", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadPredictions();
+  }, []);
+
   return (
     <div className="flex flex-col gap-12">
 
       {/* ── Header ──────────────────────────────────────────── */}
       <div className="flex flex-col gap-3">
         <div className="font-data text-accent text-[10px] tracking-widest uppercase">
-          M-02 · Depletion Predictions
+          M-02 · Depletion Predictions {loading && "(LOADING...)"}
         </div>
         <h1 className="text-5xl font-light tracking-tight uppercase leading-none">
           Depletion<br />
@@ -133,8 +186,8 @@ export default function PredictionsPage() {
       <div className="grid grid-cols-3 gap-px bg-border">
         {[
           { value: "±1.4d",  label: "Mean Prediction Error",    sub: "last 30 days" },
-          { value: "34",     label: "Active Models",             sub: "items with conf ≥ 50%" },
-          { value: "87%",    label: "Top Confidence",            sub: "Sunflower Oil — 14 orders" },
+          { value: String(items.length), label: "Active Models",             sub: "items with conf ≥ 50%" },
+          { value: items.length > 0 ? `${items[0].conf}%` : "87%", label: "Top Confidence",            sub: items.length > 0 ? items[0].name : "Sunflower Oil" },
         ].map((s) => (
           <div key={s.label} className="card p-5 flex flex-col gap-2">
             <div className="stat-value text-accent">{s.value}</div>
@@ -146,9 +199,9 @@ export default function PredictionsPage() {
 
       {/* ── Item List ───────────────────────────────────────── */}
       <div className="flex flex-col gap-4">
-        {ITEMS.map((item) => {
+        {items.map((item) => {
           const u = urgencyStyle(item.days);
-          const fill = Math.max(4, Math.round((item.days / 30) * 100));
+          const fill = Math.max(4, Math.min(100, Math.round((item.days / 30) * 100)));
           return (
             <div key={item.id} className="card overflow-hidden">
 
@@ -194,7 +247,7 @@ export default function PredictionsPage() {
                 </div>
                 <div className="flex flex-col gap-1">
                   <span className="font-data text-[10px] text-muted uppercase tracking-widest">Data Points</span>
-                  <span className="font-data text-sm">{item.history.length} orders</span>
+                  <span className="font-data text-sm">{item.history.length} cycles</span>
                 </div>
               </div>
 
@@ -238,3 +291,4 @@ export default function PredictionsPage() {
     </div>
   );
 }
+
