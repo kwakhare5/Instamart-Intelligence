@@ -221,6 +221,7 @@ async def get_alert_history(user_id: str, limit: int = 20, db: AsyncSession = De
             {
                 'id':        str(a.id),
                 'item_ids':  a.item_ids,
+                'message':   a.message_sent,
                 'sent_at':   a.sent_at.isoformat() if a.sent_at else None,
                 'status':    a.status,
                 'acted_at':  a.acted_at.isoformat() if a.acted_at else None,
