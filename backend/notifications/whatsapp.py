@@ -81,10 +81,13 @@ async def whatsapp_webhook(
         alert = res_alert.scalars().first()
         
         if alert and alert.item_ids:
-            # We construct mock structures for the depleting items referenced in the alert
-            # to pass down to the LangGraph parser state.
-            # In a real pipeline, the alert has full item structures, but since the schema has JSONB item_ids list:
-            depleting_items = [{"item_name": name, "confidence_score": 0.8, "days_remaining": 1.0} for name in alert.item_ids]
+            # Map item IDs to human-readable names from our catalog
+            from backend.seed.catalog import CATALOG
+            catalog_lookup = {item["id"]: item["name"] for item in CATALOG}
+            depleting_items = [
+                {"item_name": catalog_lookup.get(item_id, item_id), "confidence_score": 0.8, "days_remaining": 1.0}
+                for item_id in alert.item_ids
+            ]
     except Exception as e:
         logger.warning(f"Error fetching active alert details: {e}")
 
