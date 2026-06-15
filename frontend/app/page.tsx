@@ -509,38 +509,22 @@ export default function Home() {
 
                     {/* Liquid body */}
                     <div
-                      className="absolute bottom-0 left-0 w-full z-10 transition-all duration-1000 ease-out"
-                      style={{ height: `${fp}%`, background: liquidColor.base }}
+                      className="absolute bottom-0 left-0 w-full z-10 transition-all duration-1000 ease-out liquid-fill-animate"
+                      style={{ height: `${fp}%` }}
                     >
-                      {/* Animated SVG wave at surface */}
-                      <svg viewBox="0 0 200 20" preserveAspectRatio="none" className="absolute -top-4 left-0 w-full h-5">
+                      {/* Animated SVG wave & body (Seamless, no horizontal seam line) */}
+                      <svg viewBox="0 0 200 100" preserveAspectRatio="none" className="absolute top-0 left-0 w-full h-full overflow-visible">
                         <path
-                          d="M0,10 C30,0 70,20 100,10 C130,0 170,20 200,10 L200,20 L0,20 Z"
+                          d="M0,10 C30,0 70,20 100,10 C130,0 170,20 200,10 L200,100 L0,100 Z"
                           fill={liquidColor.wave}
                           style={{ animation: `liquidWave 2.8s ease-in-out infinite`, animationDelay: waveDelay }}
                         />
                         <path
-                          d="M0,12 C40,4 80,18 120,10 C150,4 180,16 200,12 L200,20 L0,20 Z"
+                          d="M0,12 C40,4 80,18 120,10 C150,4 180,16 200,12 L200,100 L0,100 Z"
                           fill={liquidColor.base}
                           style={{ animation: `liquidWave 3.5s ease-in-out infinite reverse`, animationDelay: waveDelay }}
                         />
                       </svg>
-
-                      {/* Rising bubbles */}
-                      {[0,1,2].map((b) => (
-                        <div key={b} className="absolute rounded-full" style={{
-                          width: b === 1 ? "3px" : b === 2 ? "4px" : "5px",
-                          height: b === 1 ? "3px" : b === 2 ? "4px" : "5px",
-                          background: liquidColor.bubble,
-                          left: b === 0 ? "22%" : b === 1 ? "52%" : "72%",
-                          bottom: "8%",
-                          animation: `bubbleRise ${2.4 + b * 0.7}s ease-in infinite`,
-                          animationDelay: `${b * 1.1 + idx * 0.35}s`,
-                        }} />
-                      ))}
-
-                      {/* Inner shimmer */}
-                      <div className="absolute inset-0" style={{ background: "linear-gradient(180deg,rgba(255,255,255,0.18) 0%,transparent 55%,rgba(0,0,0,0.10) 100%)" }} />
                     </div>
 
                     {/* Content */}
