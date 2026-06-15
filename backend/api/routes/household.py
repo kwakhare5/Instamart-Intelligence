@@ -92,18 +92,11 @@ async def reset_scenario_data(user_id: str, scenario: str, db: AsyncSession):
     household = await get_or_create_household(user_id, db)
     household_id = str(household.id)
     
-    # 1. Clear database history for this household to ensure clean sync state
-    await db.execute(delete(ConsumptionModel).where(ConsumptionModel.household_id == household_id))
-    
-    # Subquery for orders of this household
-    orders_stmt = select(Order.id).where(Order.household_id == household_id)
-    orders_res = await db.execute(orders_stmt)
-    order_ids = [row[0] for row in orders_res.all()]
-    if order_ids:
-        await db.execute(delete(OrderItem).where(OrderItem.order_id.in_(order_ids)))
-        await db.execute(delete(Order).where(Order.id.in_(order_ids)))
-    
-    await db.execute(delete(RestockAlert).where(RestockAlert.household_id == household.id))
+    # 1. Clear database history to ensure clean sync state and avoid unique key violations across households
+    await db.execute(delete(ConsumptionModel))
+    await db.execute(delete(OrderItem))
+    await db.execute(delete(Order))
+    await db.execute(delete(RestockAlert))
     await db.commit()
     
     # 2. Generate and write scenario orders
