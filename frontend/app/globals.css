@@ -190,6 +190,27 @@ body {
   will-change: transform;
 }
 
+/* Horizontal repeating wave scrolling animations */
+@keyframes wave-move-front {
+  0% { transform: translate3d(0, 0, 0); }
+  100% { transform: translate3d(-50%, 0, 0); }
+}
+
+@keyframes wave-move-back {
+  0% { transform: translate3d(-50%, 0, 0); }
+  100% { transform: translate3d(0, 0, 0); }
+}
+
+.wave-front-animate {
+  animation: wave-move-front 8s linear infinite;
+  will-change: transform;
+}
+
+.wave-back-animate {
+  animation: wave-move-back 12s linear infinite;
+  will-change: transform;
+}
+
 /* Floating jar lid on hover */
 .jar-lid-transition {
   transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);

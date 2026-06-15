@@ -491,12 +491,30 @@ export default function Home() {
               .map((item, idx) => {
                 const isAdded = addedItems.has(item.name);
                 const fp = item.fillPercent;
-                const liquidColor = fp <= 20
-                  ? { base: "rgba(220,38,38,0.55)",  wave: "rgba(220,38,38,0.75)",  bubble: "rgba(254,202,202,0.7)"  }
+                const colors = fp <= 20
+                  ? {
+                      frontStart: "rgba(254, 205, 211, 0.95)",
+                      frontMid: "rgba(239, 68, 68, 0.8)",
+                      frontEnd: "rgba(159, 18, 57, 0.95)",
+                      backStart: "rgba(239, 68, 68, 0.5)",
+                      backEnd: "rgba(136, 19, 55, 0.75)",
+                    }
                   : fp <= 45
-                  ? { base: "rgba(180,83,9,0.50)",   wave: "rgba(217,119,6,0.75)",  bubble: "rgba(253,230,138,0.7)"  }
-                  : { base: "rgba(5,150,105,0.45)",  wave: "rgba(16,185,129,0.70)", bubble: "rgba(167,243,208,0.7)"  };
-                const waveDelay = `${idx * 0.4}s`;
+                  ? {
+                      frontStart: "rgba(253, 230, 138, 0.95)",
+                      frontMid: "rgba(245, 158, 11, 0.8)",
+                      frontEnd: "rgba(180, 83, 9, 0.95)",
+                      backStart: "rgba(245, 158, 11, 0.5)",
+                      backEnd: "rgba(146, 64, 14, 0.75)",
+                    }
+                  : {
+                      frontStart: "rgba(167, 243, 208, 0.95)",
+                      frontMid: "rgba(16, 185, 129, 0.75)",
+                      frontEnd: "rgba(4, 120, 87, 0.95)",
+                      backStart: "rgba(16, 185, 129, 0.45)",
+                      backEnd: "rgba(6, 95, 70, 0.75)",
+                    };
+                const waveDelay = `${idx * -1.2}s`; // Negative delay offsets start times so waves are out of phase immediately
 
                 return (
                   <div
@@ -512,17 +530,36 @@ export default function Home() {
                       className="absolute bottom-0 left-0 w-full z-10 transition-all duration-1000 ease-out liquid-fill-animate"
                       style={{ height: `${fp}%` }}
                     >
-                      {/* Animated SVG wave & body (Seamless, no horizontal seam line) */}
-                      <svg viewBox="0 0 200 100" preserveAspectRatio="none" className="absolute top-0 left-0 w-full h-full overflow-visible">
+                      {/* Animated SVG wave & body (Seamless, no horizontal seam line, horizontally scrolling repeating waves) */}
+                      <svg
+                        viewBox="0 0 400 100"
+                        preserveAspectRatio="none"
+                        className="absolute top-0 left-0 w-[200%] h-full overflow-visible"
+                      >
+                        <defs>
+                          <linearGradient id={`grad-back-${idx}`} x1="0%" y1="0%" x2="0%" y2="100%">
+                            <stop offset="0%" stopColor={colors.backStart} />
+                            <stop offset="100%" stopColor={colors.backEnd} />
+                          </linearGradient>
+                          <linearGradient id={`grad-front-${idx}`} x1="0%" y1="0%" x2="0%" y2="100%">
+                            <stop offset="0%" stopColor={colors.frontStart} />
+                            <stop offset="12%" stopColor={colors.frontMid} />
+                            <stop offset="100%" stopColor={colors.frontEnd} />
+                          </linearGradient>
+                        </defs>
+                        {/* Back Wave Layer */}
                         <path
-                          d="M0,10 C30,0 70,20 100,10 C130,0 170,20 200,10 L200,100 L0,100 Z"
-                          fill={liquidColor.wave}
-                          style={{ animation: `liquidWave 2.8s ease-in-out infinite`, animationDelay: waveDelay }}
+                          d="M 0,25 Q 50,33 100,25 Q 150,17 200,25 Q 250,33 300,25 Q 350,17 400,25 L 400,100 L 0,100 Z"
+                          fill={`url(#grad-back-${idx})`}
+                          className="wave-back-animate"
+                          style={{ animationDelay: waveDelay }}
                         />
+                        {/* Front Wave Layer */}
                         <path
-                          d="M0,12 C40,4 80,18 120,10 C150,4 180,16 200,12 L200,100 L0,100 Z"
-                          fill={liquidColor.base}
-                          style={{ animation: `liquidWave 3.5s ease-in-out infinite reverse`, animationDelay: waveDelay }}
+                          d="M 0,20 Q 50,12 100,20 Q 150,28 200,20 Q 250,12 300,20 Q 350,28 400,20 L 400,100 L 0,100 Z"
+                          fill={`url(#grad-front-${idx})`}
+                          className="wave-front-animate"
+                          style={{ animationDelay: waveDelay }}
                         />
                       </svg>
                     </div>
