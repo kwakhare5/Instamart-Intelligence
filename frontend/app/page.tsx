@@ -567,24 +567,24 @@ export default function Home() {
                     {/* Content */}
                     <div className="relative z-20 flex flex-col h-full justify-between pointer-events-none">
                       <div className="flex flex-col gap-0.5">
-                        <span className="text-[10px] uppercase font-bold text-muted font-display tracking-wider">
+                        <span className="text-[10px] uppercase font-bold text-foreground/75 font-display tracking-wider jar-text-glow-muted">
                           {item.name.toLowerCase().includes("milk") ? "Dairy" :
                            item.name.toLowerCase().includes("oil") ? "Oils" :
                            item.name.toLowerCase().includes("egg") ? "Proteins" : "Staple"}
                         </span>
-                        <span className="font-extrabold text-xs text-foreground tracking-tight line-clamp-2 leading-tight font-display drop-shadow-sm">
+                        <span className="font-extrabold text-xs text-foreground tracking-tight line-clamp-2 leading-tight font-display jar-text-glow">
                           {item.name.split(" — ")[0]}
                         </span>
                       </div>
                       <div className="flex flex-col items-start my-auto">
-                        <span className="text-2xl font-black text-foreground font-display leading-none drop-shadow-sm">
+                        <span className="text-2xl font-black text-foreground font-display leading-none jar-text-glow">
                           {item.isRefilled ? "✓" : item.days}
                         </span>
-                        <span className="text-[10px] font-bold text-muted uppercase tracking-wider font-display mt-0.5">
+                        <span className="text-[10px] font-bold text-foreground/80 uppercase tracking-wider font-display mt-0.5 jar-text-glow-muted">
                           {item.isRefilled ? "Refilled" : item.days === 1 ? "day left" : "days left"}
                         </span>
                       </div>
-                      <div className="text-[9px] font-bold text-muted/90 uppercase tracking-widest font-display">
+                      <div className="text-[9px] font-bold text-foreground/80 uppercase tracking-widest font-display jar-text-glow-muted">
                         {item.isRefilled ? "95% full" : `${fp}% full`}
                       </div>
                     </div>
