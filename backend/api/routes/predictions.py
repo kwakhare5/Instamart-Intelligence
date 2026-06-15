@@ -72,6 +72,7 @@ async def get_predictions(user_id: str, db: AsyncSession = Depends(get_db)):
 
     for m in models:
         days_remaining: float | None = None
+        stock_fill_percent: float | None = None
         status = 'unknown'
 
         if m.estimated_depletion_date is not None:
@@ -79,7 +80,13 @@ async def get_predictions(user_id: str, db: AsyncSession = Depends(get_db)):
             # Normalize timezone — DB may store naive UTC datetimes
             if dep.tzinfo is None:
                 dep = dep.replace(tzinfo=timezone.utc)
-            days_remaining = round((dep - now).total_seconds() / 86400, 1)
+            raw_days = (dep - now).total_seconds() / 86400
+            
+            cycle = float(m.consumption_cycle_days or 30.0)  # type: ignore
+            fill_val = (raw_days / cycle) * 100 if cycle > 0 else 0.0
+            stock_fill_percent = max(0.0, min(100.0, fill_val))
+            
+            days_remaining = round(raw_days, 1)
 
             if days_remaining < 0:
                 status = 'depleted'
@@ -100,6 +107,7 @@ async def get_predictions(user_id: str, db: AsyncSession = Depends(get_db)):
             'last_purchase_quantity':    m.last_purchase_quantity,
             'estimated_depletion_date':  m.estimated_depletion_date.isoformat() if m.estimated_depletion_date is not None else None,
             'days_remaining':            days_remaining,
+            'stock_fill_percent':        round(stock_fill_percent, 1) if stock_fill_percent is not None else 100.0,
             'confidence_score':          m.confidence_score,
             'data_points':               m.data_points,
             'status':                    status,  # depleted / critical / low / ok / unknown

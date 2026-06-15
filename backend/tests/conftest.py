@@ -1,4 +1,5 @@
 import os
+# ruff: noqa: E402
 import pytest
 import asyncio
 from sqlalchemy.pool import StaticPool

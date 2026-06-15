@@ -1,5 +1,3 @@
-import json
-import os
 import random
 from datetime import datetime, timedelta, timezone
 from backend.seed.generate_orders import HOUSEHOLD_ITEMS

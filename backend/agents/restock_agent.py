@@ -571,7 +571,7 @@ async def parse_order_intent(state: RestockState) -> dict:
     Extracts item names and quantities from the message, looks them up in the catalog,
     and reports matched/unmatched items before asking for cart confirmation.
     """
-    from backend.seed.catalog import CATALOG, lookup_catalog_item
+    from backend.seed.catalog import lookup_catalog_item
     import re
 
     user_msg = (state.get("user_message") or "").strip()

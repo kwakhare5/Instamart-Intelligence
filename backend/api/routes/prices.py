@@ -7,7 +7,7 @@ Endpoints:
   - GET /api/prices/alerts — returns active spike/dip alerts
 """
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
 from datetime import datetime, timedelta, timezone

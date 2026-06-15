@@ -87,7 +87,7 @@ async def reset_scenario_data(user_id: str, scenario: str, db: AsyncSession):
     import os
     import json
     import httpx
-    from sqlalchemy import delete, select
+    from sqlalchemy import delete
     
     household = await get_or_create_household(user_id, db)
     household_id = str(household.id)
@@ -113,7 +113,7 @@ async def reset_scenario_data(user_id: str, scenario: str, db: AsyncSession):
     # 3. Trigger mock server reload
     try:
         async with httpx.AsyncClient() as client:
-            reload_res = await client.post("http://127.0.0.1:8001/reload_mock_orders", timeout=5.0)
+            await client.post("http://127.0.0.1:8001/reload_mock_orders", timeout=5.0)
     except Exception as e:
         print(f"Warning: Mock server reload request failed: {e}")
         

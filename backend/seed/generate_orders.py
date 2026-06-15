@@ -182,7 +182,7 @@ if __name__ == "__main__":
         json.dump(orders, f, indent=2)
 
     print(f"Generated {len(orders)} precision orders over 4 months.")
-    print(f"  Travel gap: Day 43 to Day 53.")
-    print(f"  Milk cycle: exactly 2.1 days average.")
-    print(f"  Oil cycle: exactly 14.7 days, last bought 13 days ago.")
+    print("  Travel gap: Day 43 to Day 53.")
+    print("  Milk cycle: exactly 2.1 days average.")
+    print("  Oil cycle: exactly 14.7 days, last bought 13 days ago.")
     print(f"  Saved to {output_path}")

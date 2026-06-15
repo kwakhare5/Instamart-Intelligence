@@ -16,6 +16,8 @@ Note on current state:
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from pydantic import BaseModel
+from datetime import datetime
 
 from backend.database.connection import get_db
 from backend.database.models import Household, Recipe
@@ -64,9 +66,6 @@ async def get_recipes(user_id: str, db: AsyncSession = Depends(get_db)):
         ],
     }
 
-
-from pydantic import BaseModel
-from datetime import datetime
 
 class RecipeParseRequest(BaseModel):
     recipe: str

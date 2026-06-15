@@ -15,11 +15,8 @@ from typing_extensions import TypedDict
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
-from backend.config import settings
 from backend.mcp.client import mcp_client
 from backend.database.models import Household, ConsumptionModel
-
-logger = logging.getLogger(__name__)
 
 from backend.agents.restock_agent import (
     is_groq_configured,
@@ -27,6 +24,8 @@ from backend.agents.restock_agent import (
     call_groq_api,
     call_nvidia_api
 )
+
+logger = logging.getLogger(__name__)
 
 
 class RecipeState(TypedDict):
@@ -243,7 +242,6 @@ async def identify_missing_node(state: RecipeState) -> RecipeState:
                     "estimated": f"{pantry_qty:.2f} standard units left"
                 })
             else:
-                deficit_standard = needed_norm - pantry_qty
                 you_need.append({
                     "name": ing["name"],
                     "quantity": needed_qty,

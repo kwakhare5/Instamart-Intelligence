@@ -15,7 +15,6 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.database.models import Order, OrderItem
-from backend.config import settings
 from backend.mcp.client import mcp_client
 
 logger = logging.getLogger(__name__)

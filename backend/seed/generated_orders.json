@@ -653,15 +653,6 @@
     "placed_at": "2026-03-19T10:32:00+05:30",
     "items": [
       {
-        "item_id": "INS_001",
-        "item_name": "Amul Taza Milk 1L",
-        "quantity": 1,
-        "standard_quantity": 1.0,
-        "unit": "L",
-        "category": "dairy",
-        "price": 27.43
-      },
-      {
         "item_id": "INS_002",
         "item_name": "Aashirvaad Atta 5kg",
         "quantity": 1,
@@ -689,7 +680,7 @@
         "price": 41.24
       }
     ],
-    "total": 356.74,
+    "total": 329.31,
     "status": "delivered"
   },
   {
@@ -698,13 +689,13 @@
     "placed_at": "2026-03-20T10:42:00+05:30",
     "items": [
       {
-        "item_id": "INS_003",
-        "item_name": "Fortune Sunflower Oil 1L",
+        "item_id": "INS_001",
+        "item_name": "Amul Taza Milk 1L",
         "quantity": 1,
         "standard_quantity": 1.0,
         "unit": "L",
-        "category": "staples",
-        "price": 131.54
+        "category": "dairy",
+        "price": 27.43
       },
       {
         "item_id": "INS_011",
@@ -716,7 +707,7 @@
         "price": 51.21
       }
     ],
-    "total": 182.75,
+    "total": 78.64,
     "status": "delivered"
   },
   {
@@ -734,6 +725,15 @@
         "price": 27.91
       },
       {
+        "item_id": "INS_003",
+        "item_name": "Fortune Sunflower Oil 1L",
+        "quantity": 1,
+        "standard_quantity": 1.0,
+        "unit": "L",
+        "category": "staples",
+        "price": 131.54
+      },
+      {
         "item_id": "INS_006",
         "item_name": "Tomatoes (500g)",
         "quantity": 1,
@@ -743,7 +743,7 @@
         "price": 28.39
       }
     ],
-    "total": 56.3,
+    "total": 187.84,
     "status": "delivered"
   },
   {
@@ -1337,15 +1337,6 @@
         "price": 81.18
       },
       {
-        "item_id": "INS_005",
-        "item_name": "Nandini Eggs (Pack of 12)",
-        "quantity": 1,
-        "standard_quantity": 12.0,
-        "unit": "piece",
-        "category": "protein",
-        "price": 84.59
-      },
-      {
         "item_id": "INS_006",
         "item_name": "Tomatoes (500g)",
         "quantity": 1,
@@ -1355,7 +1346,7 @@
         "price": 28.82
       }
     ],
-    "total": 194.59,
+    "total": 110.0,
     "status": "delivered"
   },
   {
@@ -1363,6 +1354,15 @@
     "user_id": "demo_user_001",
     "placed_at": "2026-05-01T10:14:00+05:30",
     "items": [
+      {
+        "item_id": "INS_005",
+        "item_name": "Nandini Eggs (Pack of 12)",
+        "quantity": 1,
+        "standard_quantity": 12.0,
+        "unit": "piece",
+        "category": "protein",
+        "price": 84.59
+      },
       {
         "item_id": "INS_011",
         "item_name": "Britannia Whole Wheat Bread",
@@ -1373,7 +1373,7 @@
         "price": 51.6
       }
     ],
-    "total": 51.6,
+    "total": 136.19,
     "status": "delivered"
   },
   {
@@ -1893,7 +1893,16 @@
         "unit": "L",
         "category": "dairy",
         "price": 28.69
-      },
+      }
+    ],
+    "total": 28.69,
+    "status": "delivered"
+  },
+  {
+    "order_id": "INS_MOCK_0078",
+    "user_id": "demo_user_001",
+    "placed_at": "2026-05-26T19:35:00+05:30",
+    "items": [
       {
         "item_id": "INS_011",
         "item_name": "Britannia Whole Wheat Bread",
@@ -1904,13 +1913,13 @@
         "price": 48.3
       }
     ],
-    "total": 76.99,
+    "total": 48.3,
     "status": "delivered"
   },
   {
-    "order_id": "INS_MOCK_0078",
+    "order_id": "INS_MOCK_0079",
     "user_id": "demo_user_001",
-    "placed_at": "2026-05-27T19:35:00+05:30",
+    "placed_at": "2026-05-27T19:20:00+05:30",
     "items": [
       {
         "item_id": "INS_001",
@@ -1935,9 +1944,9 @@
     "status": "delivered"
   },
   {
-    "order_id": "INS_MOCK_0079",
+    "order_id": "INS_MOCK_0080",
     "user_id": "demo_user_001",
-    "placed_at": "2026-05-29T19:20:00+05:30",
+    "placed_at": "2026-05-29T18:39:00+05:30",
     "items": [
       {
         "item_id": "INS_001",
@@ -1980,9 +1989,9 @@
     "status": "delivered"
   },
   {
-    "order_id": "INS_MOCK_0080",
+    "order_id": "INS_MOCK_0081",
     "user_id": "demo_user_001",
-    "placed_at": "2026-05-30T18:39:00+05:30",
+    "placed_at": "2026-05-30T20:57:00+05:30",
     "items": [
       {
         "item_id": "INS_006",
@@ -1998,9 +2007,9 @@
     "status": "delivered"
   },
   {
-    "order_id": "INS_MOCK_0081",
+    "order_id": "INS_MOCK_0082",
     "user_id": "demo_user_001",
-    "placed_at": "2026-05-31T20:57:00+05:30",
+    "placed_at": "2026-05-31T19:27:00+05:30",
     "items": [
       {
         "item_id": "INS_001",
@@ -2016,9 +2025,9 @@
     "status": "delivered"
   },
   {
-    "order_id": "INS_MOCK_0082",
+    "order_id": "INS_MOCK_0083",
     "user_id": "demo_user_001",
-    "placed_at": "2026-06-02T19:27:00+05:30",
+    "placed_at": "2026-06-02T19:28:00+05:30",
     "items": [
       {
         "item_id": "INS_001",
@@ -2052,9 +2061,9 @@
     "status": "delivered"
   },
   {
-    "order_id": "INS_MOCK_0083",
+    "order_id": "INS_MOCK_0084",
     "user_id": "demo_user_001",
-    "placed_at": "2026-06-03T19:28:00+05:30",
+    "placed_at": "2026-06-03T09:47:00+05:30",
     "items": [
       {
         "item_id": "INS_005",
@@ -2079,9 +2088,9 @@
     "status": "delivered"
   },
   {
-    "order_id": "INS_MOCK_0084",
+    "order_id": "INS_MOCK_0085",
     "user_id": "demo_user_001",
-    "placed_at": "2026-06-04T09:47:00+05:30",
+    "placed_at": "2026-06-04T18:28:00+05:30",
     "items": [
       {
         "item_id": "INS_001",
@@ -2097,9 +2106,9 @@
     "status": "delivered"
   },
   {
-    "order_id": "INS_MOCK_0085",
+    "order_id": "INS_MOCK_0086",
     "user_id": "demo_user_001",
-    "placed_at": "2026-06-05T18:28:00+05:30",
+    "placed_at": "2026-06-05T10:48:00+05:30",
     "items": [
       {
         "item_id": "INS_007",
@@ -2115,9 +2124,9 @@
     "status": "delivered"
   },
   {
-    "order_id": "INS_MOCK_0086",
+    "order_id": "INS_MOCK_0087",
     "user_id": "demo_user_001",
-    "placed_at": "2026-06-06T10:48:00+05:30",
+    "placed_at": "2026-06-06T09:53:00+05:30",
     "items": [
       {
         "item_id": "INS_001",
@@ -2151,9 +2160,9 @@
     "status": "delivered"
   },
   {
-    "order_id": "INS_MOCK_0087",
+    "order_id": "INS_MOCK_0088",
     "user_id": "demo_user_001",
-    "placed_at": "2026-06-07T09:53:00+05:30",
+    "placed_at": "2026-06-07T20:17:00+05:30",
     "items": [
       {
         "item_id": "INS_005",
@@ -2169,9 +2178,9 @@
     "status": "delivered"
   },
   {
-    "order_id": "INS_MOCK_0088",
+    "order_id": "INS_MOCK_0089",
     "user_id": "demo_user_001",
-    "placed_at": "2026-06-08T20:17:00+05:30",
+    "placed_at": "2026-06-08T19:31:00+05:30",
     "items": [
       {
         "item_id": "INS_001",
@@ -2187,9 +2196,9 @@
     "status": "delivered"
   },
   {
-    "order_id": "INS_MOCK_0089",
+    "order_id": "INS_MOCK_0090",
     "user_id": "demo_user_001",
-    "placed_at": "2026-06-09T19:31:00+05:30",
+    "placed_at": "2026-06-09T20:15:00+05:30",
     "items": [
       {
         "item_id": "INS_006",
@@ -2205,9 +2214,9 @@
     "status": "delivered"
   },
   {
-    "order_id": "INS_MOCK_0090",
+    "order_id": "INS_MOCK_0091",
     "user_id": "demo_user_001",
-    "placed_at": "2026-06-10T20:15:00+05:30",
+    "placed_at": "2026-06-10T10:28:00+05:30",
     "items": [
       {
         "item_id": "INS_001",
@@ -2241,9 +2250,9 @@
     "status": "delivered"
   },
   {
-    "order_id": "INS_MOCK_0091",
+    "order_id": "INS_MOCK_0092",
     "user_id": "demo_user_001",
-    "placed_at": "2026-06-12T10:28:00+05:30",
+    "placed_at": "2026-06-12T08:45:00+05:30",
     "items": [
       {
         "item_id": "INS_001",
@@ -2286,9 +2295,9 @@
     "status": "delivered"
   },
   {
-    "order_id": "INS_MOCK_0092",
+    "order_id": "INS_MOCK_0093",
     "user_id": "demo_user_001",
-    "placed_at": "2026-06-14T08:45:00+05:30",
+    "placed_at": "2026-06-14T10:15:00+05:30",
     "items": [
       {
         "item_id": "INS_001",

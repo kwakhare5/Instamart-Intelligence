@@ -11,6 +11,8 @@ interface DepletingItem {
   id: string;
   name: string;
   days: number;
+  rawDays: number;
+  fillPct: number;
   conf: number;
   avg: string;
   cycle: string;
@@ -25,11 +27,11 @@ const STATS = [
 ];
 
 const FALLBACK_DEPLETING: DepletingItem[] = [
-  { id: "fallback-milk", name: "Amul Taza Milk 1L",         days: 1,  conf: 76, avg: "0.48L/day",  cycle: "1.8d" },
-  { id: "fallback-tomatoes", name: "Tomatoes (500g)",       days: 1,  conf: 78, avg: "140g/day",   cycle: "3.1d" },
-  { id: "fallback-eggs", name: "Nandini Eggs (Pack of 12)", days: 2,  conf: 88, avg: "2.4/day",    cycle: "4.6d" },
-  { id: "fallback-bread", name: "Britannia Whole Wheat Bread", days: 3, conf: 82, avg: "0.24/day",  cycle: "3.9d" },
-  { id: "fallback-onions", name: "Onions (1kg)",            days: 5,  conf: 72, avg: "130g/day",   cycle: "7.7d" },
+  { id: "fallback-milk", name: "Amul Taza Milk 1L",         days: 1, rawDays: 1, fillPct: 30, conf: 76, avg: "0.48L/day",  cycle: "1.8d" },
+  { id: "fallback-tomatoes", name: "Tomatoes (500g)",       days: 1, rawDays: 1, fillPct: 14, conf: 78, avg: "140g/day",   cycle: "3.1d" },
+  { id: "fallback-eggs", name: "Nandini Eggs (Pack of 12)", days: 2, rawDays: 2, fillPct: 43, conf: 88, avg: "2.4/day",    cycle: "4.6d" },
+  { id: "fallback-bread", name: "Britannia Whole Wheat Bread", days: 3, rawDays: 3, fillPct: 77, conf: 82, avg: "0.24/day",  cycle: "3.9d" },
+  { id: "fallback-onions", name: "Onions (1kg)",            days: 5, rawDays: 5, fillPct: 53, conf: 72, avg: "130g/day",   cycle: "7.7d" },
 ];
 
 
@@ -195,7 +197,7 @@ export default function Home() {
     }, 3000);
   }
 
-  const { data: predictionsData, mutate: mutatePredictions, isLoading: predictionsLoading, isValidating: predictionsValidating } = useSWR(
+  const { data: predictionsData, mutate: mutatePredictions, isLoading: predictionsLoading } = useSWR(
     "demo_user_001",
     fetcher,
     {
@@ -213,13 +215,15 @@ export default function Home() {
     return () => window.removeEventListener("refresh-dashboard", handleRefresh);
   }, [mutatePredictions]);
 
-  const loading = predictionsLoading || predictionsValidating || switchingScenario;
+  const loading = predictionsLoading || switchingScenario;
 
   const depleting = predictionsData?.predictions && predictionsData.predictions.length > 0
     ? predictionsData.predictions.map((p: APIPrediction) => ({
         id: p.item_id,
         name: p.item_name,
         days: p.days_remaining !== null ? Math.round(p.days_remaining) : 10,
+        rawDays: p.days_remaining !== null ? p.days_remaining : 10,
+        fillPct: p.stock_fill_percent !== undefined ? Math.round(p.stock_fill_percent) : 100,
         conf: Math.round((p.confidence_score || 0.5) * 100),
         avg: `${p.avg_daily_consumption.toFixed(2)}/day`,
         cycle: `${p.consumption_cycle_days || 7}d`,
@@ -468,8 +472,7 @@ export default function Home() {
             [...depleting]
               .map((item) => {
                 const isRefilled = refilledItems.has(item.name);
-                const cycleDays = parseFloat(item.cycle) || 30;
-                const fillPercent = isRefilled ? 95 : Math.max(8, Math.min(95, Math.round((item.days / cycleDays) * 100)));
+                const fillPercent = isRefilled ? 95 : Math.max(0, item.fillPct);
                 return { ...item, fillPercent, isRefilled };
               })
               .sort((a, b) => a.fillPercent - b.fillPercent)
@@ -635,8 +638,7 @@ export default function Home() {
             [...depleting]
               .map((item) => {
                 const isRefilled = refilledItems.has(item.name);
-                const cycleDays = parseFloat(item.cycle) || 30;
-                const fillPct = isRefilled ? 95 : Math.max(8, Math.min(95, Math.round((item.days / cycleDays) * 100)));
+                const fillPct = isRefilled ? 95 : Math.max(0, item.fillPct);
                 return { ...item, fillPct, isRefilled };
               })
               .sort((a, b) => a.fillPct - b.fillPct)

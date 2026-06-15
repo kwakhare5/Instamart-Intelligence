@@ -1,4 +1,4 @@
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
+from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 from backend.config import settings
 
 # Why: echo=False — suppress SQL logs in production; NullPool avoids connection leaks with alembic
